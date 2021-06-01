@@ -1,0 +1,29 @@
+{
+    "ip":"0.0.0.0",
+    "port":"4001",
+    "configpath":"./log",
+    "tcpserver":{
+        "ip":"xxxx",
+        "port":"xxxx"
+    },
+    "database":{
+        "type":"xxxx",
+        "user":"xxxx",
+        "password":"xxxx",
+        "host":"xxxx",
+        "port":"xxxx",
+        "dbName":"xxxx",
+        "charset":"xxxx",
+        "showsql":true
+    },
+    "email":{
+        "user":"xxxx",
+        "password":"xxxx",
+        "host":"xxxx"
+    },
+    "redis":{
+        "addr":"xxxx",
+        "password":"xxxx",
+        "db":0
+    }
+}
