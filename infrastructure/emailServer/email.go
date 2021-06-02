@@ -27,8 +27,8 @@ type EmailEngine struct {
 var EmailEngineModel *EmailEngine
 
 // InitEmailEngine 初始化邮件服务引擎
-func InitEmailEngine(config *configServer.ConfigStruct) {
-	emailConfig := config.Email
+func InitEmailEngine() {
+	emailConfig := configServer.Emailcfg
 	var emailEngine = EmailEngine{
 		User:     emailConfig.User,
 		Host:     emailConfig.Host,

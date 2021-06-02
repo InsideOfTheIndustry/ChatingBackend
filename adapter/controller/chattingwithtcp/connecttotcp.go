@@ -17,8 +17,7 @@ import (
 
 // newTcpConnecton 建立一个新的tcp连接
 func newTcpConnecton() (net.Conn, error) {
-	config := configServer.GetConfig()
-	tcpconnect, err := net.Dial("tcp", config.Tcpserver.Ip+":"+config.Tcpserver.Port)
+	tcpconnect, err := net.Dial("tcp", configServer.Tcpservercfg.Ip+":"+configServer.Tcpservercfg.Port)
 	if err != nil {
 		logServer.Error("连接至Tcp服务器失败:(%s)", err.Error())
 		return nil, err

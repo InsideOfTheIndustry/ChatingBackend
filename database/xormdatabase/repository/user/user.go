@@ -87,17 +87,17 @@ func (ud UserRepository) Update(user *entity.UserInfo) error {
 	return nil
 }
 
-func (ud UserRepository) UpadateAvatar(user *entity.UserInfo) error {
+func (ud UserRepository) UpdateAvatar(user *entity.UserInfo) error {
 	var userindatabase = UserInfo{
 		Avatar:      user.Avatar,
 		UserAccount: user.UserAccount,
 	}
 	_, err := ud.Where("useraccount = ?", user.UserAccount).Update(userindatabase)
 	if err != nil {
-		logServer.Error("更新用户失败：（%s）", err.Error())
+		logServer.Error("更新用户头像失败：（%s）", err.Error())
 		return err
 	}
-	logServer.Error("更新用户成功。")
+	logServer.Error("更新用户头像成功。")
 	return nil
 }
 

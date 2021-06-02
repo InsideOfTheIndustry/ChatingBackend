@@ -24,12 +24,12 @@ type RedisEngine struct {
 var RedisClient *RedisEngine
 
 // InitRedis 初始化redis连接
-func InitRedis(config *configServer.ConfigStruct) {
-	redisconfig := config.Redis
+func InitRedis() {
+	redisconfig := configServer.Rediscfg
 	rdb := redis.NewClient(&redis.Options{
-		Addr: redisconfig.Addr,
+		Addr:     redisconfig.Addr,
 		Password: redisconfig.Password,
-		DB: redisconfig.Db,
+		DB:       redisconfig.Db,
 	})
 
 	var newredisclient = &RedisEngine{}

@@ -118,3 +118,16 @@ func (us *UserService) GetUserFriendInfo(useraccount int64) (entity.FriendInfo, 
 
 	return userFriendInfo, nil
 }
+
+// UpdateUserAvatar 更新用户头像
+func (us *UserService) UpdateUserAvatar(useraccount int64, avatar string) (bool, error) {
+	var userinfo = &entity.UserInfo{
+		UserAccount: useraccount,
+		Avatar:      avatar,
+	}
+	if err := us.UserRepository.UpdateAvatar(userinfo); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

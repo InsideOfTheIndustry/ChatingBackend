@@ -17,10 +17,9 @@ import (
 
 func TestRedis(t *testing.T) {
 	// 读取配置文件
-	configServer.ParseConfig("../../../config/config.json")
-	config := configServer.GetConfig()
+	configServer.InitConfig("../../../config/config.json")
 
-	redisdatabase.InitRedis(config)
+	redisdatabase.InitRedis()
 
 	var userdao = UserCacheRepository{
 		redisdatabase.RedisClient,
@@ -30,6 +29,4 @@ func TestRedis(t *testing.T) {
 	msg, _ := userdao.GetVerificationCode("1121883342@qq.com")
 	logServer.Info("数据为:%s", msg)
 
-
-	
 }

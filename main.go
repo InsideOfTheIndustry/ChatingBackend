@@ -18,6 +18,7 @@ import (
 	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/emailServer"
 	"chatting/infrastructure/logServer"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,19 +27,22 @@ func main() {
 	engine := gin.Default()
 
 	// 读取配置文件
-	configServer.ParseConfig("./config/config.json")
-	config := configServer.GetConfig()
+	configServer.InitConfig("./config/config.yaml")
+
+	logServer.Info("%s", configServer.ResourceStorecfg.UserAvatar)
+	// 资源文件夹开放
+	engine.StaticFS("/useravatar", http.Dir(configServer.ResourceStorecfg.UserAvatar)) // 用户头像位置
 
 	// 初始化
-	engine.Use(cors.Cors())             // 解决跨域问题
-	logServer.SetFileLevel("info")      // 设置日志等级
-	routers.InitRouter(engine)          // 初始化路由
-	xormdatabase.InitXormEngine(config) // 初始化mysql数据库连接引擎
-	redisdatabase.InitRedis(config)     // 初始化redis数据库
-	emailServer.InitEmailEngine(config) // 初始化邮件服务
-	controller.InitDomainService()      // 初始化领域服务
+	engine.Use(cors.Cors())        // 解决跨域问题
+	logServer.SetFileLevel("info") // 设置日志等级
+	routers.InitRouter(engine)     // 初始化路由
+	xormdatabase.InitXormEngine()  // 初始化mysql数据库连接引擎
+	redisdatabase.InitRedis()      // 初始化redis数据库
+	emailServer.InitEmailEngine()  // 初始化邮件服务
+	controller.InitDomainService() // 初始化领域服务
 
-	err := engine.Run(config.Ip + ":" + config.Port)
+	err := engine.Run(configServer.Applicationcfg.Ip + ":" + configServer.Applicationcfg.Port)
 	if err != nil {
 		logServer.Error("服务启动失败(%s)...", err.Error())
 	}

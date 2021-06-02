@@ -16,7 +16,6 @@ import (
 
 func TestSendemail(t *testing.T) {
 	configServer.ParseConfig("../../config/config.json")
-	config := configServer.GetConfig()
-	InitEmailEngine(config)
+	InitEmailEngine()
 	EmailEngineModel.SendEmail("12138", "webchatting用户注册验证码", "1121883342@qq.com")
 }

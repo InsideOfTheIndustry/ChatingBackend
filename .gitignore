@@ -3,3 +3,7 @@
 
 # 屏蔽配置文件
 **/config.json
+**/config.yaml
+
+# 屏蔽resourcelocation文件夹
+resourcelocation/

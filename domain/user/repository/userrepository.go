@@ -20,7 +20,7 @@ type UserRepository interface {
 	Query(useraccount int64) (*entity.UserInfo, error)         // 查询用户信息
 	QueryEmailIfAlreadyUse(email string) (bool, error)         // 查询邮箱是否已经注册
 	QueryFriends(useraccount int64) (entity.FriendInfo, error) // 查询用户好友信息
-	UpadateAvatar(user *entity.UserInfo) error                 // 修改用户头像信息
+	UpdateAvatar(user *entity.UserInfo) error                  // 修改用户头像信息
 }
 
 //UserCacheRepository 用户缓存存储库

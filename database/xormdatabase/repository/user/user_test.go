@@ -11,6 +11,7 @@ package user
 
 import (
 	"chatting/database/xormdatabase"
+	"chatting/domain/user/entity"
 	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/logServer"
 	"testing"
@@ -18,25 +19,20 @@ import (
 
 func TestCreate(t *testing.T) {
 	// 读取配置文件
-	configServer.ParseConfig("../../../../config/config.json")
-	config := configServer.GetConfig()
+	configServer.InitConfig("../../../../config/config.json")
 	// 测试数据库
 	var userdao = UserRepository{}
-	xormdatabase.InitXormEngine(config)
+	xormdatabase.InitXormEngine()
 	userdao.XormEngine = xormdatabase.DBEngine
-	// var userinfo = entity.UserInfo{
-	// 	UserEmail:    "xxx2",
-	// 	UserName:     "小猪猪",
-	// 	UserPassword: "123456",
-	// 	Signature:    "xxxxx",
-	// 	UserAge:      19,
-	// 	UserSex:      1,
-	// 	UserAccount: 100000,
-	// }
+	var userinfo = &entity.UserInfo{
+		Avatar:      "http://image13.m1905.cn/mdb/uploadfile/2018/1121/thumb_1_300_410_20181121095100733988.jpg",
+		UserAccount: 100009,
+	}
 	// account, _ := userdao.Create(&userinfo)
 	// users, err := userdao.Query(12313131)
 	// ifre, err := userdao.QueryEmailIfAlreadyUse("12138")
 	friends, err := userdao.QueryFriends(10009)
+	err = userdao.UpdateAvatar(userinfo)
 	// userdao.Update(&userinfo)
 
 	//logServer.Info("用户账号为:%v", account)

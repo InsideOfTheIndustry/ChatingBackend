@@ -29,7 +29,7 @@ type VerificationCode struct {
 
 // LoginInfo 用户登录信息
 type LoginInfo struct {
-	UserAccount int64 `json:"useraccount"` // 用户账号
+	UserAccount  int64  `json:"useraccount"`  // 用户账号
 	UserPassword string `json:"userpassword"` // 用户密码
 }
 
@@ -38,4 +38,8 @@ type UserInfoGet struct {
 	UserAccount int64 `json:"useraccount"` // 用户账号
 }
 
-
+// UserInfoUpadateAvatar 用户上传头像时需要的信息
+type UserInfoUpdateAvatar struct {
+	UserAccount int64  `json:"useraccount"` // 用户账号
+	Avatar      string `json:"avatar"`      // 用户上传的头像信息：图片经过base64编码后的内容
+}

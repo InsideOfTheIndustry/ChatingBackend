@@ -1,0 +1,28 @@
+settings:
+  application:
+    ip: "0.0.0.0"
+    port: "xx" # 运行端口
+    serverip: "xxxx" # 服务器地址 即程序访问地址
+  tcpserver:
+    ip: "xxxx" # tcp服务器地址
+    port: "xxxx" # tcp服务器端口
+  database:
+    type: "xxxx" # 数据库类型
+    user: "xxxx" # 用户
+    password: "xxxx" # 密码
+    host: "xxxx" # 数据库服务器地址
+    port: "xxxx" # 端口
+    dbName: "xxxx" # 数据库名称
+    charset: "utf8" # 字符集
+    showsql: true # 是否显示数据库语句
+  redis:
+    addr: "xxxx" # redis服务器位置
+    port: "xxxx" # redis服务器端口
+    password: "xxxx" # redis服务器密码
+    db: 0 
+  resourcestore:
+    useravatar: "./resourcelocation/useravatar" # 用户头像存储位置
+  email:
+    user: "xxxx" # 邮箱号
+    password: "xxxx" # 登录密码
+    host: "xxxx"  # 邮件服务器

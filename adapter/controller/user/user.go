@@ -13,10 +13,14 @@ import (
 	Service "chatting/adapter/controller"
 	Jwt "chatting/adapter/middleware/jwt"
 	"chatting/domain/user/entity"
+	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/logServer"
 	CommonError "chatting/infrastructure/utils/error"
+	"encoding/base64"
 	"errors"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -87,15 +91,14 @@ func SendVerificationCode(c *gin.Context) {
 	var emailinfo = VerificationCode{}
 
 	// 解析数据
-	err := c.BindJSON(&emailinfo)
-	if err != nil {
+
+	if err := c.BindJSON(&emailinfo); err != nil {
 		logServer.Error("数据绑定失败:(%s)", err.Error())
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
 
-	err = Service.UserService.SendVerificationCode(emailinfo.UserEmail)
-	if err != nil {
+	if err := Service.UserService.SendVerificationCode(emailinfo.UserEmail); err != nil {
 		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
 		return
 	}
@@ -173,13 +176,12 @@ func GetUserInfo(c *gin.Context) {
 // GetFriendInfo 获取用户好友信息
 func GetFriendInfo(c *gin.Context) {
 	var userinfoget = UserInfoGet{}
-	err := c.BindJSON(&userinfoget)
-	if err != nil {
+
+	if err := c.BindJSON(&userinfoget); err != nil {
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
 	useraccountint := userinfoget.UserAccount
-	
 
 	friendInfo, err := Service.UserService.GetUserFriendInfo(useraccountint)
 	if err != nil {
@@ -187,10 +189,63 @@ func GetFriendInfo(c *gin.Context) {
 		return
 	}
 	c.JSON(200, map[string]interface{}{
-		"message":"查询用户好友信息成功！",
+		"message": "查询用户好友信息成功！",
 		"friends": friendInfo.Friends,
 	})
 
+}
+
+// UpdateUserAvatar 更新用户头像信息
+func UpdateUserAvatar(c *gin.Context) {
+
+	var updateinfo = UserInfoUpdateAvatar{}
+
+	if err := c.BindJSON(&updateinfo); err != nil {
+		logServer.Error("错误为:%s", err.Error())
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+
+	// 获取图片类型
+	avartarslice := strings.Split(updateinfo.Avatar, ";")
+	// 11-last: data:image/type;xxxx...
+	avatartype := avartarslice[0][11:]
+
+	// 对图片进行转码
+	avatarbyte, err := base64.StdEncoding.DecodeString(avartarslice[1][7:])
+	if err != nil {
+		logServer.Error("错误为:%s", err.Error())
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	// useraccount 转为 string
+	useraccount := strconv.FormatInt(updateinfo.UserAccount, 10)
+
+	avartarfile, err := os.OpenFile("./resourcelocation/useravatar/"+useraccount+"."+avatartype, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	defer avartarfile.Close()
+
+	if _, err := avartarfile.Write(avatarbyte); err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	var avatarremotepath = "http://" + configServer.Applicationcfg.ServerIp + ":" + configServer.Applicationcfg.Port + "/useravatar/" + useraccount + "." + avatartype
+
+	if _, err := Service.UserService.UpdateUserAvatar(updateinfo.UserAccount, avatarremotepath); err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"avatar":  avatarremotepath,
+		"message": "success",
+	})
 
 }
 

@@ -27,8 +27,8 @@ type XormEngine struct {
 var DBEngine *XormEngine
 
 // InitXormEngine 初始化数据库引擎
-func InitXormEngine(config *configServer.ConfigStruct) error {
-	dbconfig := config.Database
+func InitXormEngine() error {
+	dbconfig := configServer.Databasecfg
 	connectexpression := dbconfig.User + ":" + dbconfig.Password + "@tcp(" + dbconfig.Host + ":" + dbconfig.Port + ")/" + dbconfig.DBName + "?charset=" + dbconfig.Charset // "root:888888@tcp(127.0.0.1:3306)/db_jpa_demo?charset=utf8"
 	engine, err := xorm.NewEngine("mysql", connectexpression)
 	if err != nil {
