@@ -43,3 +43,12 @@ type UserInfoUpdateAvatar struct {
 	UserAccount int64  `json:"useraccount"` // 用户账号
 	Avatar      string `json:"avatar"`      // 用户上传的头像信息：图片经过base64编码后的内容
 }
+
+// UserInfoUpdate 更新用户信息
+type UserInfoUpdate struct {
+	UserAccount int64  `json:"useraccount"` // 用户账号
+	Signature   string `json:"signature"`   // 用户个性签名
+	UserName    string `json:"username"`    // 用户昵称
+	UserAge     int64  `json:"userage"`     // 用户年龄
+	UserSex     int64  `json:"usersex"`     // 用户性别
+}

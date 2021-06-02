@@ -71,15 +71,14 @@ func (ud UserRepository) Query(useraccount int64) (*entity.UserInfo, error) {
 // Update(*entity.UserInfo) error // 更新用户信息 不包括头像信息
 func (ud UserRepository) Update(user *entity.UserInfo) error {
 	var userindatabase = UserInfo{
-		UserAccount:  user.UserAccount,
-		UserName:     user.UserName,
-		Signature:    user.Signature,
-		UserPassword: user.UserPassword,
-		UserAge:      user.UserAge,
-		UserSex:      user.UserSex,
+		UserAccount: user.UserAccount,
+		UserName:    user.UserName,
+		Signature:   user.Signature,
+		UserAge:     user.UserAge,
+		UserSex:     user.UserSex,
 	}
-	_, err := ud.Where("useraccount = ?", user.UserAccount).Update(userindatabase)
-	if err != nil {
+
+	if _, err := ud.Where("useraccount = ?", user.UserAccount).Update(userindatabase); err != nil {
 		logServer.Error("更新用户失败：（%s）", err.Error())
 		return err
 	}
@@ -87,6 +86,7 @@ func (ud UserRepository) Update(user *entity.UserInfo) error {
 	return nil
 }
 
+// UpdateAvatar 更新用户头像信息
 func (ud UserRepository) UpdateAvatar(user *entity.UserInfo) error {
 	var userindatabase = UserInfo{
 		Avatar:      user.Avatar,
