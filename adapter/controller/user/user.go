@@ -12,7 +12,6 @@ package user
 import (
 	Service "chatting/adapter/controller"
 	Jwt "chatting/adapter/middleware/jwt"
-	"chatting/domain/user/entity"
 	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/logServer"
 	CommonError "chatting/infrastructure/utils/error"
@@ -38,15 +37,6 @@ func RegisterAccount(c *gin.Context) {
 		return
 	}
 
-	var registeruserinfo = entity.UserInfo{
-		UserEmail:    userinfo.UserEmail,
-		UserName:     userinfo.UserName,
-		UserPassword: userinfo.UserPassword,
-		Signature:    userinfo.Signature,
-		UserAge:      userinfo.UserAge,
-		UserSex:      userinfo.UserSex,
-		Avatar:       userinfo.Avatar,
-	}
 	// 验证验证码与邮箱
 	ifhasemail, err := Service.UserService.VerifyCode(userinfo.VerificationCode, userinfo.UserEmail)
 
@@ -61,7 +51,7 @@ func RegisterAccount(c *gin.Context) {
 	}
 
 	// 正式注册
-	useraccount, err := Service.UserService.RegisterUser(registeruserinfo)
+	useraccount, err := Service.UserService.RegisterUser(userinfo.UserEmail, userinfo.UserName, userinfo.UserPassword, userinfo.Signature, userinfo.Avatar, userinfo.UserAge, userinfo.UserSex)
 	if err != nil {
 
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
@@ -253,7 +243,6 @@ func UpdateUserAvatar(c *gin.Context) {
 func TokenVerify(c *gin.Context) {
 	token := c.GetHeader("token")
 	useraccount := c.GetHeader("account")
-	logServer.Info("token:%s,useraccount %s", token, useraccount)
 	useraccountint, err := strconv.ParseInt(useraccount, 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
@@ -277,4 +266,31 @@ func TokenVerify(c *gin.Context) {
 		return
 	}
 	c.Next()
+}
+
+// UpdateUserInfo 更新用户信息
+func UpdateUserInfo(c *gin.Context) {
+	var userupdateinfo = UserInfoUpdate{}
+	if err := c.BindJSON(&userupdateinfo); err != nil {
+		logServer.Error("绑定数据出现错误:%s", err.Error())
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+
+	if err := Service.UserService.UpdateUserInfo(userupdateinfo.UserAccount, userupdateinfo.UserAge, userupdateinfo.UserSex, userupdateinfo.UserName, userupdateinfo.Signature); err != nil {
+		logServer.Error("更新用户信息失败出现错误:%s", err.Error())
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	userinfo, err := Service.UserService.UserRepository.Query(userupdateinfo.UserAccount)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	userinfo.UserPassword = "******"
+	c.JSON(200, map[string]interface{}{
+		"message":  "用户信息更新成功！",
+		"userinfo": userinfo,
+	})
 }

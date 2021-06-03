@@ -30,5 +30,6 @@ func InitRouter(r *gin.Engine) {
 	user.POST("/userinfo", userApi.TokenVerify, userApi.GetUserInfo)       // 获取用户信息
 	user.POST("/userfriend", userApi.TokenVerify, userApi.GetFriendInfo)   // 获取用户好友信息
 	user.PUT("/useravatar", userApi.TokenVerify, userApi.UpdateUserAvatar) // 修改用户的头像信息
+	user.PUT("/userinfo", userApi.TokenVerify, userApi.UpdateUserInfo)     // 修改用户的信息
 
 }

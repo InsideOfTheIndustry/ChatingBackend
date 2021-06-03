@@ -25,7 +25,16 @@ type UserService struct {
 }
 
 //RegisterUser 用户注册
-func (us *UserService) RegisterUser(user entity.UserInfo) (int64, error) {
+func (us *UserService) RegisterUser(useremail, username, userpassword, signature, avatar string, userage, usersex int64) (int64, error) {
+	var user = entity.UserInfo{
+		UserEmail:    useremail,
+		UserName:     username,
+		UserPassword: userpassword,
+		Signature:    signature,
+		UserAge:      userage,
+		UserSex:      usersex,
+		Avatar:       avatar,
+	}
 
 	// 判断邮箱是否已被注册
 	emailifused, err := us.UserRepository.QueryEmailIfAlreadyUse(user.UserEmail)
@@ -130,4 +139,20 @@ func (us *UserService) UpdateUserAvatar(useraccount int64, avatar string) (bool,
 	}
 
 	return true, nil
+}
+
+// UpdateUserInfo 更新用户信息 不包括头像
+func (us *UserService) UpdateUserInfo(useraccount, userage, usersex int64, username, signature string) error {
+	var userinfo = entity.UserInfo{
+		UserAccount: useraccount,
+		UserAge:     userage,
+		UserSex:     usersex,
+		UserName:    username,
+		Signature:   signature,
+	}
+
+	if err := us.UserRepository.Update(&userinfo); err != nil {
+		return err
+	}
+	return nil
 }
