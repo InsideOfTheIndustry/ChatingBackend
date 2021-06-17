@@ -3,6 +3,7 @@ settings:
     ip: "0.0.0.0"
     port: "xx" # 运行端口
     serverip: "xxxx" # 服务器地址 即程序访问地址
+    jwtkey: "xxx" # token秘钥
   tcpserver:
     ip: "xxxx" # tcp服务器地址
     port: "xxxx" # tcp服务器端口

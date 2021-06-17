@@ -12,11 +12,12 @@ package configServer
 import "github.com/spf13/viper"
 
 //InitTcpserver 初始化tcp服务器配置
-func InitApplicationcfg(tcpcfg *viper.Viper) *Application {
+func InitApplicationcfg(appcfg *viper.Viper) *Application {
 	return &Application{
-		Port:     tcpcfg.GetString("port"),
-		Ip:       tcpcfg.GetString("ip"),
-		ServerIp: tcpcfg.GetString("serverip"),
+		Port:     appcfg.GetString("port"),
+		Ip:       appcfg.GetString("ip"),
+		ServerIp: appcfg.GetString("serverip"),
+		JwtKey:   appcfg.GetString("jwtkey"),
 	}
 }
 

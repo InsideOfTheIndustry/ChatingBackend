@@ -10,14 +10,11 @@
 package jwt
 
 import (
+	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/logServer"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-)
-
-const (
-	SECRETKEY = "2139ajfhsremnsfafar"
 )
 
 // UserClaim 用户token格式
@@ -38,7 +35,7 @@ func GenarateToken(useraccount int64) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, userclaim)
-	tokenstring, err := token.SignedString([]byte(SECRETKEY))
+	tokenstring, err := token.SignedString([]byte(configServer.Applicationcfg.JwtKey))
 	if err != nil {
 		logServer.Error("生成token失败：%s", err.Error())
 		return "", err
@@ -51,11 +48,11 @@ func GenarateToken(useraccount int64) (string, error) {
 // ParseToken 解析token
 func ParseToken(tokenstring string) (*UserClaim, error) {
 	token, err := jwt.ParseWithClaims(tokenstring, &UserClaim{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(SECRETKEY), nil
+		return []byte(configServer.Applicationcfg.JwtKey), nil
 	})
 	if claims, ok := token.Claims.(*UserClaim); ok && token.Valid {
-		return claims,nil                           
+		return claims, nil
 	} else {
-		return nil,err
+		return nil, err
 	}
 }

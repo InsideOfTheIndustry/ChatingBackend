@@ -25,6 +25,7 @@ type Application struct {
 	Ip       string `json:"ip"`   // ip地址
 	Port     string `json:"port"` // 端口号
 	ServerIp string // 程序运行所处服务的ip
+	JwtKey   string // token秘钥
 }
 
 // tcp服务器ip和port  tcpserver
