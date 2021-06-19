@@ -112,7 +112,7 @@ func (us *UserService) VerifyLoginInfo(useraccount int64, userpassword string) (
 	if err != nil {
 		return false, err
 	}
-	if userinfo.UserPassword != userpassword {
+	if userinfo.UserPassword != userpassword || userinfo.Delete == 1 {
 		return false, nil
 	}
 	return true, nil
@@ -124,7 +124,9 @@ func (us *UserService) GetUserFriendInfo(useraccount int64) (entity.FriendInfo, 
 	if err != nil {
 		return userFriendInfo, err
 	}
-
+	for i := range userFriendInfo.Friends {
+		userFriendInfo.Friends[i].UserPassword = "************"
+	}
 	return userFriendInfo, nil
 }
 
@@ -155,4 +157,69 @@ func (us *UserService) UpdateUserInfo(useraccount, userage, usersex int64, usern
 		return err
 	}
 	return nil
+}
+
+// CreateNewGroup 新建一个群聊
+func (us *UserService) CreateNewGroup(groupname, groupintro, verificationcode, emailaddr string, groupowner int64) error {
+
+	userinfo, err := us.UserRepository.Query(groupowner)
+
+	if err != nil {
+		return err
+	}
+	if userinfo.UserEmail != emailaddr {
+		return errors.New("邮箱地址不正确！")
+	}
+
+	vc, err := us.UserCacheRepository.GetVerificationCode(emailaddr + "group")
+	if err != nil {
+		return err
+	}
+
+	if vc != verificationcode {
+		return errors.New("验证码错误或失效!")
+	}
+
+	var groupinfo = entity.GroupInfo{
+		GroupName:  groupname,
+		GroupIntro: groupintro,
+		GroupOwner: groupowner,
+	}
+	if err := us.UserRepository.CreateGroup(groupinfo); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SendCreateNewGroupVerifyCode 在创建群聊时向对方邮箱发送验证码
+func (us *UserService) SendCreateNewGroupVerifyCode(emailaddr string, useraccount int64) error {
+
+	userinfo, err := us.UserRepository.Query(useraccount)
+
+	if err != nil {
+		return err
+	}
+	if userinfo.UserEmail != emailaddr {
+		return errors.New("邮箱地址不正确！")
+	}
+
+	// 生成验证码
+	var messagecode = ""
+	for i := 0; i < 4; i++ {
+		number := rand.Intn(10)
+		word := strconv.Itoa(number)
+		messagecode += word
+	}
+
+	// 设置验证码缓存
+	err = us.UserCacheRepository.SetVerificationCode(emailaddr+"group", messagecode)
+	if err != nil {
+		return err
+	}
+
+	// 发送验证码
+	if err := us.UserEmailServer.SendEmail(messagecode, "webchatting群聊创建验证码", emailaddr); err != nil {
+		return err
+	}
+	return err
 }

@@ -15,12 +15,17 @@ import (
 
 //UserRepository 用户存储库
 type UserRepository interface {
-	Create(user *entity.UserInfo) (int64, error)               // 创建新用户 返回用户账号信息
-	Update(user *entity.UserInfo) error                        // 更新用户信息（此处不包括头像）
-	Query(useraccount int64) (*entity.UserInfo, error)         // 查询用户信息
-	QueryEmailIfAlreadyUse(email string) (bool, error)         // 查询邮箱是否已经注册
-	QueryFriends(useraccount int64) (entity.FriendInfo, error) // 查询用户好友信息
-	UpdateAvatar(user *entity.UserInfo) error                  // 修改用户头像信息
+	Create(user *entity.UserInfo) (int64, error)                    // 创建新用户 返回用户账号信息
+	Update(user *entity.UserInfo) error                             // 更新用户信息（此处不包括头像）
+	Query(useraccount int64) (*entity.UserInfo, error)              // 查询用户信息
+	QueryEmailIfAlreadyUse(email string) (bool, error)              // 查询邮箱是否已经注册
+	QueryFriends(useraccount int64) (entity.FriendInfo, error)      // 查询用户好友信息
+	UpdateAvatar(user *entity.UserInfo) error                       // 修改用户头像信息
+	DeleteUser(useraccount int64) error                             // 删除用户
+	QueryGroupOfUser(useraccount int64) ([]entity.GroupInfo, error) // 查询用户所在群
+	CreateGroup(groupinfo entity.GroupInfo) error                   // 插入新群聊
+	QueryGroupInfo(groupid int64) (entity.GroupInfo, error)         // 查询某一群聊
+	UpdateGroup(groupinfo entity.GroupInfo) error                   // 更新群聊信息
 }
 
 //UserCacheRepository 用户缓存存储库
