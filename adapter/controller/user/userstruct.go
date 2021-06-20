@@ -27,6 +27,12 @@ type VerificationCode struct {
 	UserEmail string `json:"useremail"` // 邮箱号
 }
 
+// VerificationCodeofNewGroup 发送新建群聊验证码时接收的参数信息
+type VerificationCodeofNewGroup struct {
+	UserEmail   string `json:"useremail"`   // 邮箱号
+	UserAccount int64  `json:"useraccount"` // 用户账号
+}
+
 // LoginInfo 用户登录信息
 type LoginInfo struct {
 	UserAccount  int64  `json:"useraccount"`  // 用户账号
@@ -36,6 +42,11 @@ type LoginInfo struct {
 // UserInfoGet 获取用户信息时的输入结构
 type UserInfoGet struct {
 	UserAccount int64 `json:"useraccount"` // 用户账号
+}
+
+// GroupInfoGet 获取用户信息时的输入结构
+type GroupInfoGet struct {
+	Groupid int64 `json:"groupid"` // 用户账号
 }
 
 // UserInfoUpadateAvatar 用户上传头像时需要的信息
@@ -51,4 +62,13 @@ type UserInfoUpdate struct {
 	UserName    string `json:"username"`    // 用户昵称
 	UserAge     int64  `json:"userage"`     // 用户年龄
 	UserSex     int64  `json:"usersex"`     // 用户性别
+}
+
+// GroupInfoCreateAndUpdate 用于群聊创建和修改
+type GroupInfoCreateAndUpdate struct {
+	UserAccount      int64  `json:"useraccount"`      // 创建者账号
+	GroupName        string `json:"groupname"`        // 群聊名称
+	GroupIntro       string `json:"groupintro"`       // 群聊简介
+	EmailAddr        string `json:"emailaddr"`        // 邮箱地址
+	VerificationCode string `json:"verificationcode"` // 验证码
 }

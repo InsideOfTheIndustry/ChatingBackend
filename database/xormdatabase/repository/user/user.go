@@ -13,6 +13,7 @@ import (
 	"chatting/database/xormdatabase"
 	"chatting/domain/user/entity"
 	"chatting/infrastructure/logServer"
+	"errors"
 )
 
 // UserRepository 用户的dao操作
@@ -56,6 +57,12 @@ func (ud UserRepository) Query(useraccount int64) (*entity.UserInfo, error) {
 		logServer.Error("查询数据出错:(%s)", err.Error())
 		return &userinfoentity, err
 	}
+
+	if userinfo.Delete == 1 {
+		logServer.Info("用户已删除:%v", useraccount)
+		return &userinfoentity, nil
+	}
+
 	userinfoentity.UserAccount = userinfo.UserAccount
 	userinfoentity.UserEmail = userinfo.UserEmail
 	userinfoentity.UserName = userinfo.UserName
@@ -64,6 +71,8 @@ func (ud UserRepository) Query(useraccount int64) (*entity.UserInfo, error) {
 	userinfoentity.UserPassword = userinfo.UserPassword
 	userinfoentity.UserAge = userinfo.UserAge
 	userinfoentity.UserSex = userinfo.UserSex
+	userinfoentity.OwnGroups = userinfo.OwnGroups
+	userinfoentity.Online = userinfo.Online
 
 	return &userinfoentity, nil
 }
@@ -214,4 +223,114 @@ func (ud UserRepository) QueryEmailIfAlreadyUse(email string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+// DeleteUser 删除用户
+func (ud UserRepository) DeleteUser(useraccount int64) error {
+	var ui = UserInfo{
+		UserAccount: useraccount,
+		Delete:      1,
+	}
+	if _, err := ud.Cols("delete").Update(&ui); err != nil {
+		logServer.Error("删除用户失败:%s", err.Error())
+		return err
+	}
+	return nil
+}
+
+// QueryGroupOfUser 查询用户所在的群
+func (ud UserRepository) QueryGroupOfUser(useraccount int64) ([]entity.GroupInfo, error) {
+	var usergroupinfo = make([]UserGroup, 0)
+	if err := ud.Where("useraccount = ?", useraccount).Find(&usergroupinfo); err != nil {
+		logServer.Error("查询用户所在的群失败:%s", err.Error())
+		return make([]entity.GroupInfo, 0), err
+	}
+
+	var groupidlist = make([]int64, len(usergroupinfo))
+	for i := range usergroupinfo {
+		groupid := usergroupinfo[i].Groupid
+		groupidlist = append(groupidlist, groupid)
+	}
+
+	var grouplist = make([]GroupInfo, 0)
+	if err := ud.In("groupid", groupidlist).Find(&grouplist); err != nil {
+		logServer.Error("查询用户所在群信息失败:%s", err.Error())
+	}
+
+	var groupentitylist = make([]entity.GroupInfo, 0)
+	for i := range grouplist {
+		entitygroup := (entity.GroupInfo)(grouplist[i])
+		groupentitylist = append(groupentitylist, entitygroup)
+	}
+
+	return groupentitylist, nil
+
+}
+
+// CreateGroup 创建群聊
+func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
+	var infowritein = GroupInfo{
+		GroupIntro: groupinfo.GroupIntro,
+		GroupName:  groupinfo.GroupName,
+		GroupOwner: groupinfo.GroupOwner,
+	}
+	sess := ud.NewSession()
+	defer sess.Close()
+
+	if err := sess.Begin(); err != nil {
+		logServer.Error("事务启动失败:%s", err.Error())
+		return err
+	}
+
+	user, err := ud.Query(groupinfo.GroupOwner)
+	if err != nil {
+		logServer.Error("查询用户失败:%s", err.Error())
+		return errors.New("your account has problem")
+	}
+	if user.OwnGroups >= 2 {
+		logServer.Error("用户群聊已达上限")
+		return errors.New("you can not create more groups")
+	}
+
+	if _, err := sess.InsertOne(infowritein); err != nil {
+		sess.Rollback()
+		logServer.Error("插入新群聊失败:%s", err.Error())
+		return err
+	}
+	var userinfo = UserInfo{
+		OwnGroups: user.OwnGroups + 1,
+	}
+	if _, err := sess.Where("useraccount = ?", user.UserAccount).Cols("owngroups").Update(&userinfo); err != nil {
+		sess.Rollback()
+		logServer.Error("更新用户群聊个数失败:%s", err.Error())
+		return err
+	}
+
+	return sess.Commit()
+
+}
+
+// UpdateGroup 更新群聊信息
+func (ud UserRepository) UpdateGroup(groupinfo entity.GroupInfo) error {
+	return nil
+}
+
+// QueryGroupInfo 查询群聊信息
+func (ud UserRepository) QueryGroupInfo(groupid int64) (entity.GroupInfo, error) {
+	var groupinfo = GroupInfo{}
+	ok, err := ud.Where("groupid = ?", groupid).Get(&groupinfo)
+	if err != nil || !ok {
+		logServer.Error("查询群聊信息失败:%s", err.Error())
+		return entity.GroupInfo{}, err
+	}
+
+	var groupinforeturn = entity.GroupInfo{
+		Groupid:     groupinfo.Groupid,
+		GroupName:   groupinfo.GroupName,
+		GroupIntro:  groupinfo.GroupIntro,
+		GroupAvatar: groupinfo.GroupAvatar,
+		GroupOwner:  groupinfo.GroupOwner,
+	}
+
+	return groupinforeturn, nil
 }

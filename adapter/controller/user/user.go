@@ -294,3 +294,83 @@ func UpdateUserInfo(c *gin.Context) {
 		"userinfo": userinfo,
 	})
 }
+
+// GetUserGroupInfo 查询用户所在的群信息
+func GetUserGroupInfo(c *gin.Context) {
+	var userinfoget = UserInfoGet{}
+	if err := c.BindJSON(&userinfoget); err != nil {
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+	groupsinfo, err := Service.UserService.UserRepository.QueryGroupOfUser(userinfoget.UserAccount)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	c.JSON(200, map[string]interface{}{
+		"message":   "查询用户群聊信息成功！",
+		"groupinfo": groupsinfo,
+	})
+}
+
+// CreateNewGroup 新建群聊
+func CreateNewGroup(c *gin.Context) {
+	var groupinfo = GroupInfoCreateAndUpdate{}
+	if err := c.BindJSON(&groupinfo); err != nil {
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+	if err := Service.UserService.CreateNewGroup(groupinfo.GroupName, groupinfo.GroupIntro, groupinfo.VerificationCode, groupinfo.EmailAddr, groupinfo.UserAccount); err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"message": "新建群聊成功！",
+		"success": true,
+	})
+}
+
+// QueryGroupInfo 查询群信息
+func QueryGroupInfo(c *gin.Context) {
+	var groupinfoget = GroupInfoGet{}
+
+	if err := c.BindJSON(&groupinfoget); err != nil {
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+
+	groupinfo, err := Service.UserService.UserRepository.QueryGroupInfo(groupinfoget.Groupid)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"message":   "查询群聊信息成功！",
+		"groupinfo": groupinfo,
+	})
+}
+
+//SendNewGroupVerificationCode 发送验证码
+func SendNewGroupVerificationCode(c *gin.Context) {
+	var emailinfo = VerificationCodeofNewGroup{}
+
+	// 解析数据
+
+	if err := c.BindJSON(&emailinfo); err != nil {
+		logServer.Error("数据绑定失败:(%s)", err.Error())
+		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+
+	if err := Service.UserService.SendCreateNewGroupVerifyCode(emailinfo.UserEmail, emailinfo.UserAccount); err != nil {
+		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
+		return
+	}
+
+	c.JSON(200, map[string]interface{}{
+		"message": "验证码发送成功",
+		"status":  200,
+	})
+}

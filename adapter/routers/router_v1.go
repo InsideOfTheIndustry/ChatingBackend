@@ -24,12 +24,16 @@ func InitRouter(r *gin.Engine) {
 	v1.GET("/chatting", chattingApi.ConnectToTcpServer) // 用户聊天时的连接
 
 	user := v1.Group("/user")
-	user.POST("/register", userApi.RegisterAccount)                        // 用户注册
-	user.POST("/verificationcode", userApi.SendVerificationCode)           // 发送验证码
-	user.POST("/login", userApi.UserLogin)                                 // 用户登录
-	user.POST("/userinfo", userApi.TokenVerify, userApi.GetUserInfo)       // 获取用户信息
-	user.POST("/userfriend", userApi.TokenVerify, userApi.GetFriendInfo)   // 获取用户好友信息
-	user.PUT("/useravatar", userApi.TokenVerify, userApi.UpdateUserAvatar) // 修改用户的头像信息
-	user.PUT("/userinfo", userApi.TokenVerify, userApi.UpdateUserInfo)     // 修改用户的信息
+	user.POST("/register", userApi.RegisterAccount)                                                   // 用户注册
+	user.POST("/verificationcode", userApi.SendVerificationCode)                                      // 发送验证码
+	user.POST("/newgroupverificationcode", userApi.TokenVerify, userApi.SendNewGroupVerificationCode) // 发送创建群聊验证码
+	user.POST("/login", userApi.UserLogin)                                                            // 用户登录
+	user.POST("/userinfo", userApi.TokenVerify, userApi.GetUserInfo)                                  // 获取用户信息
+	user.POST("/userfriend", userApi.TokenVerify, userApi.GetFriendInfo)                              // 获取用户好友信息
+	user.PUT("/useravatar", userApi.TokenVerify, userApi.UpdateUserAvatar)                            // 修改用户的头像信息
+	user.PUT("/userinfo", userApi.TokenVerify, userApi.UpdateUserInfo)                                // 修改用户的信息
+	user.POST("/usergroup", userApi.TokenVerify, userApi.GetUserGroupInfo)                            // 获取用户群聊信息
+	user.POST("/group", userApi.TokenVerify, userApi.CreateNewGroup)                                  // 新增一个群
+	user.POST("/grouinfo", userApi.TokenVerify, userApi.QueryGroupInfo)                               // 查询一个群信息
 
 }
