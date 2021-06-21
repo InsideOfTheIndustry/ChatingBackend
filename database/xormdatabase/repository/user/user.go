@@ -16,6 +16,10 @@ import (
 	"errors"
 )
 
+const (
+	DefaultGroup int64 = 10000
+)
+
 // UserRepository 用户的dao操作
 type UserRepository struct {
 	*xormdatabase.XormEngine
@@ -23,6 +27,13 @@ type UserRepository struct {
 
 // Create(user *entity.UserInfo) (int64,error) // 创建新用户 返回用户账号信息
 func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
+	sess := ud.NewSession()
+	defer sess.Close()
+	if err := sess.Begin(); err != nil {
+		logServer.Error("事务启动失败:%s", err.Error())
+		return 0, err
+	}
+
 	var userindatabase = UserInfo{
 		UserAccount:  user.UserAccount,
 		UserEmail:    user.UserEmail,
@@ -33,15 +44,35 @@ func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
 		UserAge:      user.UserAge,
 		UserSex:      user.UserSex,
 	}
-	_, err := ud.InsertOne(userindatabase)
+	_, err := sess.InsertOne(userindatabase)
 	if err != nil {
 		logServer.Error("创建用户失败：（%s）", err.Error())
+		sess.Rollback()
 		return 0, err
 	}
 
 	var usernew = UserInfo{}
-	ud.Where("useremail = ?", user.UserEmail).Get(&usernew)
+	if _, err := sess.Where("useremail = ?", user.UserEmail).Get(&usernew); err != nil {
+		logServer.Error("查询用户信息失败:%s", err.Error())
+		sess.Rollback()
+		return 0, err
+	}
 
+	// 插入默认群聊
+	var usergroup = UserGroup{
+		Useraccount:     usernew.UserAccount,
+		Groupid:         DefaultGroup,
+		UserNameInGroup: usernew.UserName,
+	}
+	if _, err := sess.InsertOne(usergroup); err != nil {
+		logServer.Error("将用户加入默认群聊失败:%s", err.Error())
+		sess.Rollback()
+		return 0, err
+	}
+
+	if err := sess.Commit(); err != nil {
+		return 0, err
+	}
 	return usernew.UserAccount, nil
 
 }
