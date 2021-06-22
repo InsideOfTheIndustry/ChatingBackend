@@ -304,6 +304,7 @@ func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
 		GroupIntro: groupinfo.GroupIntro,
 		GroupName:  groupinfo.GroupName,
 		GroupOwner: groupinfo.GroupOwner,
+		CreateAt:   groupinfo.CreateAt,
 	}
 	sess := ud.NewSession()
 	defer sess.Close()
@@ -323,11 +324,31 @@ func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
 		return errors.New("you can not create more groups")
 	}
 
+	// 插入新群聊
 	if _, err := sess.InsertOne(infowritein); err != nil {
 		sess.Rollback()
 		logServer.Error("插入新群聊失败:%s", err.Error())
 		return err
 	}
+
+	if _, err := sess.Get(&infowritein); err != nil {
+		sess.Rollback()
+		logServer.Error("查询新群聊失败:%s", err.Error())
+		return err
+	}
+
+	// 插入用户 群聊关系 准备加一个时间字段
+	var usergroup = UserGroup{
+		Useraccount:     groupinfo.GroupOwner,
+		Groupid:         infowritein.Groupid,
+		UserNameInGroup: user.UserName,
+	}
+	if _, err := sess.InsertOne(usergroup); err != nil {
+		logServer.Error("将用户加入默认群聊失败:%s", err.Error())
+		sess.Rollback()
+		return err
+	}
+
 	var userinfo = UserInfo{
 		OwnGroups: user.OwnGroups + 1,
 	}

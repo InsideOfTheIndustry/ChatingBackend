@@ -15,6 +15,7 @@ import (
 	"errors"
 	"math/rand"
 	"strconv"
+	"time"
 )
 
 //UserService 用户领域服务
@@ -160,18 +161,15 @@ func (us *UserService) UpdateUserInfo(useraccount, userage, usersex int64, usern
 }
 
 // CreateNewGroup 新建一个群聊
-func (us *UserService) CreateNewGroup(groupname, groupintro, verificationcode, emailaddr string, groupowner int64) error {
+func (us *UserService) CreateNewGroup(groupname, groupintro, verificationcode string, createat time.Time, groupowner int64) error {
 
 	userinfo, err := us.UserRepository.Query(groupowner)
 
 	if err != nil {
 		return err
 	}
-	if userinfo.UserEmail != emailaddr {
-		return errors.New("邮箱地址不正确！")
-	}
 
-	vc, err := us.UserCacheRepository.GetVerificationCode(emailaddr + "group")
+	vc, err := us.UserCacheRepository.GetVerificationCode(userinfo.UserEmail + "group")
 	if err != nil {
 		return err
 	}
@@ -184,6 +182,7 @@ func (us *UserService) CreateNewGroup(groupname, groupintro, verificationcode, e
 		GroupName:  groupname,
 		GroupIntro: groupintro,
 		GroupOwner: groupowner,
+		CreateAt:   createat,
 	}
 	if err := us.UserRepository.CreateGroup(groupinfo); err != nil {
 		return err
@@ -192,15 +191,16 @@ func (us *UserService) CreateNewGroup(groupname, groupintro, verificationcode, e
 }
 
 // SendCreateNewGroupVerifyCode 在创建群聊时向对方邮箱发送验证码
-func (us *UserService) SendCreateNewGroupVerifyCode(emailaddr string, useraccount int64) error {
+func (us *UserService) SendCreateNewGroupVerifyCode(useraccount int64) error {
 
 	userinfo, err := us.UserRepository.Query(useraccount)
 
 	if err != nil {
 		return err
 	}
-	if userinfo.UserEmail != emailaddr {
-		return errors.New("邮箱地址不正确！")
+
+	if userinfo.OwnGroups >= 2 {
+		return errors.New("number of the group you created allready more than 2, you can not create new group")
 	}
 
 	// 生成验证码
@@ -212,13 +212,13 @@ func (us *UserService) SendCreateNewGroupVerifyCode(emailaddr string, useraccoun
 	}
 
 	// 设置验证码缓存
-	err = us.UserCacheRepository.SetVerificationCode(emailaddr+"group", messagecode)
+	err = us.UserCacheRepository.SetVerificationCode(userinfo.UserEmail+"group", messagecode)
 	if err != nil {
 		return err
 	}
 
 	// 发送验证码
-	if err := us.UserEmailServer.SendEmail(messagecode, "webchatting群聊创建验证码", emailaddr); err != nil {
+	if err := us.UserEmailServer.SendEmail(messagecode, "webchatting群聊创建验证码", userinfo.UserEmail); err != nil {
 		return err
 	}
 	return err
