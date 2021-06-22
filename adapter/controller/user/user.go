@@ -320,7 +320,7 @@ func CreateNewGroup(c *gin.Context) {
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
-	if err := Service.UserService.CreateNewGroup(groupinfo.GroupName, groupinfo.GroupIntro, groupinfo.VerificationCode, groupinfo.EmailAddr, groupinfo.UserAccount); err != nil {
+	if err := Service.UserService.CreateNewGroup(groupinfo.GroupName, groupinfo.GroupIntro, groupinfo.VerificationCode, groupinfo.CreateAt, groupinfo.UserAccount); err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
 	}
@@ -354,17 +354,17 @@ func QueryGroupInfo(c *gin.Context) {
 
 //SendNewGroupVerificationCode 发送验证码
 func SendNewGroupVerificationCode(c *gin.Context) {
-	var emailinfo = VerificationCodeofNewGroup{}
+	var userinfo = UserInfoGet{}
 
 	// 解析数据
 
-	if err := c.BindJSON(&emailinfo); err != nil {
+	if err := c.BindJSON(&userinfo); err != nil {
 		logServer.Error("数据绑定失败:(%s)", err.Error())
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
 
-	if err := Service.UserService.SendCreateNewGroupVerifyCode(emailinfo.UserEmail, emailinfo.UserAccount); err != nil {
+	if err := Service.UserService.SendCreateNewGroupVerifyCode(userinfo.UserAccount); err != nil {
 		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
 		return
 	}

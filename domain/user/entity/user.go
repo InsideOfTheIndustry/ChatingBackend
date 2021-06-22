@@ -9,6 +9,8 @@
 
 package entity
 
+import "time"
+
 // UserInfo 用户实体
 type UserInfo struct {
 	UserAccount  int64  // 用户账号
@@ -38,9 +40,10 @@ type FriendInfo struct {
 
 // GroupInfo 群聊信息
 type GroupInfo struct {
-	Groupid     int64  // 群聊号
-	GroupName   string // 群聊名称
-	GroupIntro  string // 群聊简介
-	GroupOwner  int64  // 群主
-	GroupAvatar string // 群头像
+	Groupid     int64     // 群聊号
+	GroupName   string    // 群聊名称
+	GroupIntro  string    // 群聊简介
+	GroupOwner  int64     // 群主
+	GroupAvatar string    // 群头像
+	CreateAt    time.Time // 时间
 }

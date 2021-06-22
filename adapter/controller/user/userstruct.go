@@ -9,6 +9,8 @@
 
 package user
 
+import "time"
+
 // User新建用户时传入的用户数据
 type User struct {
 	UserAccount      int64  `json:"useraccount"`      // 用户账号
@@ -66,9 +68,9 @@ type UserInfoUpdate struct {
 
 // GroupInfoCreateAndUpdate 用于群聊创建和修改
 type GroupInfoCreateAndUpdate struct {
-	UserAccount      int64  `json:"useraccount"`      // 创建者账号
-	GroupName        string `json:"groupname"`        // 群聊名称
-	GroupIntro       string `json:"groupintro"`       // 群聊简介
-	EmailAddr        string `json:"emailaddr"`        // 邮箱地址
-	VerificationCode string `json:"verificationcode"` // 验证码
+	UserAccount      int64     `json:"useraccount"`      // 创建者账号
+	GroupName        string    `json:"groupname"`        // 群聊名称
+	GroupIntro       string    `json:"groupintro"`       // 群聊简介
+	VerificationCode string    `json:"verificationcode"` // 验证码
+	CreateAt         time.Time `json:"createat"`         // 创建时间
 }

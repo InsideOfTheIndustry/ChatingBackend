@@ -8,6 +8,8 @@
 //
 package user
 
+import "time"
+
 // 用户实体
 type UserInfo struct {
 	UserAccount  int64  `xorm:"useraccount"`  // 用户账号
@@ -38,9 +40,10 @@ type UserGroup struct {
 
 // GroupInfo 群聊信息
 type GroupInfo struct {
-	Groupid     int64  `xorm:"groupid"`     // 群聊号
-	GroupName   string `xorm:"groupname"`   // 群聊名称
-	GroupIntro  string `xorm:"groupintro"`  // 群聊简介
-	GroupOwner  int64  `xorm:"groupowner"`  // 群主
-	GroupAvatar string `xorm:"groupavatar"` // 群头像
+	Groupid     int64     `xorm:"groupid"`     // 群聊号
+	GroupName   string    `xorm:"groupname"`   // 群聊名称
+	GroupIntro  string    `xorm:"groupintro"`  // 群聊简介
+	GroupOwner  int64     `xorm:"groupowner"`  // 群主
+	GroupAvatar string    `xorm:"groupavatar"` // 群头像
+	CreateAt    time.Time `xorm:"createat"`    // 创建时间
 }
