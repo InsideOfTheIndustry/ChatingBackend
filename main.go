@@ -37,7 +37,10 @@ func main() {
 	engine.Use(cors.Cors())        // 解决跨域问题
 	logServer.SetFileLevel("info") // 设置日志等级
 	routers.InitRouter(engine)     // 初始化路由
-	xormdatabase.InitXormEngine()  // 初始化mysql数据库连接引擎
+	if err := xormdatabase.InitXormEngine(); err != nil {
+		logServer.Error("数据库引擎启动失败:%s", err.Error())
+		panic(err.Error())
+	} // 初始化mysql数据库连接引擎
 	redisdatabase.InitRedis()      // 初始化redis数据库
 	emailServer.InitEmailEngine()  // 初始化邮件服务
 	controller.InitDomainService() // 初始化领域服务

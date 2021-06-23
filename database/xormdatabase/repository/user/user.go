@@ -48,14 +48,20 @@ func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
 	_, err := sess.InsertOne(userindatabase)
 	if err != nil {
 		logServer.Error("创建用户失败：（%s）", err.Error())
-		sess.Rollback()
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return 0, err
+		}
 		return 0, err
 	}
 
 	var usernew = UserInfo{}
 	if _, err := sess.Where("useremail = ?", user.UserEmail).Get(&usernew); err != nil {
 		logServer.Error("查询用户信息失败:%s", err.Error())
-		sess.Rollback()
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return 0, err
+		}
 		return 0, err
 	}
 
@@ -67,7 +73,10 @@ func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
 	}
 	if _, err := sess.InsertOne(usergroup); err != nil {
 		logServer.Error("将用户加入默认群聊失败:%s", err.Error())
-		sess.Rollback()
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return 0, err
+		}
 		return 0, err
 	}
 
@@ -79,7 +88,10 @@ func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
 
 	if _, err := sess.InsertOne(defaultfriend); err != nil {
 		logServer.Error("加入默认好友失败:%s", err.Error())
-		sess.Rollback()
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return 0, err
+		}
 		return 0, err
 	}
 
@@ -163,13 +175,11 @@ func (ud UserRepository) QueryFriendsComplex(useraccount int64) (entity.FriendIn
 	}
 
 	// 查询朋友信息时 需要从发起者和接收者两处查询
-	err := ud.Where("launcher = ?", useraccount).Find(&friendlauchers)
-	if err != nil {
+	if err := ud.Where("launcher = ?", useraccount).Find(&friendlauchers); err != nil {
 		logServer.Error("查询出现错误:(%s)", err.Error())
 		return friendsinfo, err
 	}
-	err = ud.Where("accepter = ?", useraccount).Find(&friendaccepters)
-	if err != nil {
+	if err := ud.Where("accepter = ?", useraccount).Find(&friendaccepters); err != nil {
 		logServer.Error("查询出现错误:(%s)", err.Error())
 		return friendsinfo, err
 	}
@@ -178,7 +188,10 @@ func (ud UserRepository) QueryFriendsComplex(useraccount int64) (entity.FriendIn
 	// 查询朋友的具体信息
 	for i := range friendlauchers {
 		var friendinfo = UserInfo{}
-		ud.Where("useraccount = ?", friendlauchers[i].Accepter).Get(&friendinfo)
+		if _, err := ud.Where("useraccount = ?", friendlauchers[i].Accepter).Get(&friendinfo); err != nil {
+			logServer.Error("查询出现错误:(%s)", err.Error())
+			return friendsinfo, err
+		}
 		var entityuserinfo = entity.UserInfo{
 			UserAccount: friendinfo.UserAccount,
 			UserName:    friendinfo.UserName,
@@ -192,7 +205,10 @@ func (ud UserRepository) QueryFriendsComplex(useraccount int64) (entity.FriendIn
 
 	for i := range friendaccepters {
 		var friendinfo = UserInfo{}
-		ud.Where("useraccount = ?", friendaccepters[i].Launcher).Get(&friendinfo)
+		if _, err := ud.Where("useraccount = ?", friendaccepters[i].Launcher).Get(&friendinfo); err != nil {
+			logServer.Error("查询出现错误:(%s)", err.Error())
+			return friendsinfo, err
+		}
 		var entityuserinfo = entity.UserInfo{
 			UserAccount: friendinfo.UserAccount,
 			UserName:    friendinfo.UserName,
@@ -339,14 +355,20 @@ func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
 
 	// 插入新群聊
 	if _, err := sess.InsertOne(infowritein); err != nil {
-		sess.Rollback()
 		logServer.Error("插入新群聊失败:%s", err.Error())
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return err
+		}
 		return err
 	}
 
 	if _, err := sess.Get(&infowritein); err != nil {
-		sess.Rollback()
 		logServer.Error("查询新群聊失败:%s", err.Error())
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return err
+		}
 		return err
 	}
 
@@ -358,7 +380,10 @@ func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
 	}
 	if _, err := sess.InsertOne(usergroup); err != nil {
 		logServer.Error("将用户加入默认群聊失败:%s", err.Error())
-		sess.Rollback()
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return err
+		}
 		return err
 	}
 
@@ -366,8 +391,12 @@ func (ud UserRepository) CreateGroup(groupinfo entity.GroupInfo) error {
 		OwnGroups: user.OwnGroups + 1,
 	}
 	if _, err := sess.Where("useraccount = ?", user.UserAccount).Cols("owngroups").Update(&userinfo); err != nil {
-		sess.Rollback()
+
 		logServer.Error("更新用户群聊个数失败:%s", err.Error())
+		if err := sess.Rollback(); err != nil {
+			logServer.Error("事务回滚失败:%s", err.Error())
+			return err
+		}
 		return err
 	}
 
