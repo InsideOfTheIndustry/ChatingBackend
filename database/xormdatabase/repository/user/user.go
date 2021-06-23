@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	DefaultGroup int64 = 10000
+	DefaultGroup  int64 = 10000
+	DefaultFriend int64 = 100009
 )
 
 // UserRepository 用户的dao操作
@@ -66,6 +67,18 @@ func (ud UserRepository) Create(user *entity.UserInfo) (int64, error) {
 	}
 	if _, err := sess.InsertOne(usergroup); err != nil {
 		logServer.Error("将用户加入默认群聊失败:%s", err.Error())
+		sess.Rollback()
+		return 0, err
+	}
+
+	// 加入默认好友
+	var defaultfriend = UserFriend{
+		Launcher: DefaultFriend,
+		Accepter: usernew.UserAccount,
+	}
+
+	if _, err := sess.InsertOne(defaultfriend); err != nil {
+		logServer.Error("加入默认好友失败:%s", err.Error())
 		sess.Rollback()
 		return 0, err
 	}
