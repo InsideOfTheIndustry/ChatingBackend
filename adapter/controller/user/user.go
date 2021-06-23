@@ -36,7 +36,16 @@ func RegisterAccount(c *gin.Context) {
 		c.JSON(400, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
-
+	path := c.FullPath()
+	ifexitreq, err := Service.UserService.JudgeRequestFrequence(path+userinfo.UserEmail+"register", 5)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	if ifexitreq {
+		c.JSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
+		return
+	}
 	// 验证验证码与邮箱
 	ifhasemail, err := Service.UserService.VerifyCode(userinfo.VerificationCode, userinfo.UserEmail)
 
@@ -81,10 +90,19 @@ func SendVerificationCode(c *gin.Context) {
 	var emailinfo = VerificationCode{}
 
 	// 解析数据
-
 	if err := c.BindJSON(&emailinfo); err != nil {
 		logServer.Error("数据绑定失败:(%s)", err.Error())
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+	path := c.FullPath()
+	frequent, err := Service.UserService.JudgeRequestFrequence(path+emailinfo.UserEmail, 60)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	if frequent {
+		c.JSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
 		return
 	}
 
@@ -239,10 +257,24 @@ func UpdateUserAvatar(c *gin.Context) {
 
 }
 
-// TokenVerify token鉴权
+// TokenVerify token鉴权 其中加入了请求频率限制
 func TokenVerify(c *gin.Context) {
+
 	token := c.GetHeader("token")
 	useraccount := c.GetHeader("account")
+	path := c.FullPath()
+	method := c.Request.Method
+
+	frequent, err := Service.UserService.JudgeRequestFrequence(path+method+useraccount, 5)
+	if err != nil {
+		c.AbortWithStatusJSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	if frequent {
+		c.AbortWithStatusJSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
+		return
+	}
+
 	useraccountint, err := strconv.ParseInt(useraccount, 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
@@ -361,6 +393,19 @@ func SendNewGroupVerificationCode(c *gin.Context) {
 	if err := c.BindJSON(&userinfo); err != nil {
 		logServer.Error("数据绑定失败:(%s)", err.Error())
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
+		return
+	}
+
+	// 设置邮件发送频率
+	useraccount := strconv.FormatInt(userinfo.UserAccount, 10)
+	path := c.FullPath()
+	frequent, err := Service.UserService.JudgeRequestFrequence(path+useraccount+"email", 60)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	if frequent {
+		c.JSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
 		return
 	}
 

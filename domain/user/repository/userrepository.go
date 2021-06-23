@@ -30,10 +30,13 @@ type UserRepository interface {
 
 //UserCacheRepository 用户缓存存储库
 type UserCacheRepository interface {
-	SetVerificationCode(emailaddr, verificationcode string) error // 设置邮箱验证码
-	GetVerificationCode(emailaddr string) (string, error)         // 获取邮箱验证码
-	SetToken(useraccount int64, token string) error               // 设置token信息
-	GetToken(useraccount int64) (string, error)                   // 获取token信息
+	SetVerificationCode(emailaddr, verificationcode string) error       // 设置邮箱验证码
+	GetVerificationCode(emailaddr string) (string, error)               // 获取邮箱验证码
+	SetToken(useraccount int64, token string) error                     // 设置token信息
+	GetToken(useraccount int64) (string, error)                         // 获取token信息
+	GetRequestInfo(path string) (bool, error)                           // 获取访问信息（防止连续多次操作）
+	SetRequestInfo(path string, verifycode string, fretime int64) error // 设置访问信息（防止连续多次操作）
+
 }
 
 // UserEmailServer 用户邮箱服务接口
