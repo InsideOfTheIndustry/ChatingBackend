@@ -36,7 +36,16 @@ func RegisterAccount(c *gin.Context) {
 		c.JSON(400, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
-
+	path := c.FullPath()
+	ifexitreq, err := Service.UserService.JudgeRequestFrequence(path+userinfo.UserEmail+"register", 5)
+	if err != nil {
+		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
+		return
+	}
+	if ifexitreq {
+		c.JSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
+		return
+	}
 	// 验证验证码与邮箱
 	ifhasemail, err := Service.UserService.VerifyCode(userinfo.VerificationCode, userinfo.UserEmail)
 
@@ -254,8 +263,9 @@ func TokenVerify(c *gin.Context) {
 	token := c.GetHeader("token")
 	useraccount := c.GetHeader("account")
 	path := c.FullPath()
+	method := c.Request.Method
 
-	frequent, err := Service.UserService.JudgeRequestFrequence(path+useraccount, 5)
+	frequent, err := Service.UserService.JudgeRequestFrequence(path+method+useraccount, 5)
 	if err != nil {
 		c.AbortWithStatusJSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
