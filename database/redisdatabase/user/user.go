@@ -52,7 +52,7 @@ func (urd UserCacheRepository) GetVerificationCode(emailaddr string) (string, er
 }
 
 // SetToken 保存token数据
-func (urd UserCacheRepository) SetToken(useraccount int64, token string ) error {
+func (urd UserCacheRepository) SetToken(useraccount int64, token string) error {
 	useraccountstring := strconv.FormatInt(useraccount, 10)
 	err := urd.Set(ctx, useraccountstring, token, time.Duration(60*60*24*time.Second)).Err()
 	if err != nil {
@@ -61,7 +61,6 @@ func (urd UserCacheRepository) SetToken(useraccount int64, token string ) error 
 	}
 	return nil
 }
-
 
 // GetToken(useraccount int64)(string, error)拿取token数据
 func (urd UserCacheRepository) GetToken(useraccount int64) (string, error) {
@@ -76,5 +75,29 @@ func (urd UserCacheRepository) GetToken(useraccount int64) (string, error) {
 	} else {
 		logServer.Info("读取账户:(%s)的token成功", useraccountstring)
 		return tokenstring, nil
+	}
+}
+
+// SetRequestInfo 设置请求信息
+func (urd UserCacheRepository) SetRequestInfo(path string, verifycode string, fretime int64) error {
+
+	err := urd.Set(ctx, path, verifycode, time.Duration(time.Duration(fretime)*time.Second)).Err()
+	if err != nil {
+		logServer.Error("写入失败：%s", err.Error())
+		return err
+	}
+	return nil
+}
+
+// GetRequestInfo 获取请求信息
+func (urd UserCacheRepository) GetRequestInfo(path string) (bool, error) {
+	_, err := urd.Get(ctx, path).Result()
+	if err == redis.Nil {
+		return false, nil
+	} else if err != nil {
+		logServer.Error("读取发现错误:(%s)", err.Error())
+		return false, err
+	} else {
+		return true, nil
 	}
 }

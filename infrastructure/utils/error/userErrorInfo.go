@@ -18,6 +18,7 @@ const (
 	SendVerificationCodeError ErrorCode = "SendVerificationCodeError" // 验证码发送失败
 	AccountOrPasswordError    ErrorCode = "AccountOrPasswordError"    // 用户名或密码验证失败
 	AuthorizationError        ErrorCode = "AuthorizationError"        // 鉴权失败
+	RequestsTooFrequentError  ErrorCode = "RequestsTooFrequentError"  // 访问过于频繁
 )
 
 // NewVerificationCodeError 验证码错误
@@ -52,5 +53,10 @@ func NewAccountOrPasswordError() Error {
 
 // NewAuthorizationError 鉴权失败
 func NewAuthorizationError() Error {
-	return NewCommonError(AuthorizationError,"token验证失败!")
+	return NewCommonError(AuthorizationError, "token验证失败!")
+}
+
+// NewRequestsTooFrequentError 请求过于频繁
+func NewRequestsTooFrequentError() Error {
+	return NewCommonError(RequestsTooFrequentError, "您的请求过于频繁，请稍后再试！")
 }

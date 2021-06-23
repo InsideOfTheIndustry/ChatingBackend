@@ -223,3 +223,24 @@ func (us *UserService) SendCreateNewGroupVerifyCode(useraccount int64) error {
 	}
 	return err
 }
+
+// JudgeRequestFrequence 判断请求访问频率
+func (us *UserService) JudgeRequestFrequence(path string, fretime int64) (bool, error) {
+	ifexist, err := us.UserCacheRepository.GetRequestInfo(path)
+
+	// 出现错误返回错误
+	if err != nil {
+		return false, err
+	}
+	// 表示请求访问过于频繁
+	if ifexist {
+		return true, nil
+	}
+	// 合理时间内的访问
+	if err := us.UserCacheRepository.SetRequestInfo(path, "5", fretime); err != nil {
+		return false, err
+	}
+
+	return false, err
+
+}
