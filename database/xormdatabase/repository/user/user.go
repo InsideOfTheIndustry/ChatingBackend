@@ -226,45 +226,24 @@ func (ud UserRepository) QueryFriendsComplex(useraccount int64) (entity.FriendIn
 
 // QueryFriends(useraccount int64)([]entity.FriendInfo, error) // 查询用户好友信息
 func (ud UserRepository) QueryFriends(useraccount int64) (entity.FriendInfo, error) {
-	var friendlauchers = make([]UserFriend, 0)
-	var friendaccepters = make([]UserFriend, 0)
+
 	var friendsinfo = entity.FriendInfo{
 		UserAccount: useraccount,
 	}
 
-	// 查询朋友信息时 需要从发起者和接收者两处查询
-	if err := ud.Where("launcher = ?", useraccount).Find(&friendlauchers); err != nil {
-		logServer.Error("查询出现错误:(%s)", err.Error())
+	var friendsinfolistaccepter = make([]entity.UserInfo, 0)
+	var friendsinfolistlauncher = make([]entity.UserInfo, 0)
+
+	if err := ud.Table("UserInfo").Join("INNER", "UserFriend", "UserInfo.useraccount = UserFriend.launcher").Where("accepter = ?", useraccount).Find(&friendsinfolistlauncher); err != nil {
+		logServer.Error("join出现错误:%s", err.Error())
 		return friendsinfo, err
 	}
 
-	if err := ud.Where("accepter = ?", useraccount).Find(&friendaccepters); err != nil {
-		logServer.Error("查询出现错误:(%s)", err.Error())
+	if err := ud.Table("UserInfo").Join("INNER", "UserFriend", "UserInfo.useraccount = UserFriend.accepter").Where("launcher = ?", useraccount).Find(&friendsinfolistaccepter); err != nil {
+		logServer.Error("join出现错误:%s", err.Error())
 		return friendsinfo, err
 	}
 
-	// 获取被定义为接受者的朋友
-	var accepter = make([]int64, 0, len(friendlauchers))
-	for i := range friendlauchers {
-		accepter = append(accepter, friendlauchers[i].Accepter)
-	}
-	// 获取定义为发起者的朋友
-	var launcher = make([]int64, 0, len(friendaccepters))
-	for i := range friendaccepters {
-		launcher = append(launcher, friendaccepters[i].Launcher)
-	}
-
-	var friendsinfolistaccepter = make([]entity.UserInfo, 0, len(accepter))
-	var friendsinfolistlauncher = make([]entity.UserInfo, 0, len(launcher))
-
-	if err := ud.In("useraccount", accepter).Find(&friendsinfolistaccepter); err != nil {
-		logServer.Error("查询朋友信息出错:%s", err.Error())
-		return friendsinfo, err
-	}
-	if err := ud.In("useraccount", launcher).Find(&friendsinfolistlauncher); err != nil {
-		logServer.Error("查询朋友信息出错:%s", err.Error())
-		return friendsinfo, err
-	}
 	friendsinfo.Friends = append(friendsinfo.Friends, friendsinfolistaccepter...)
 	friendsinfo.Friends = append(friendsinfo.Friends, friendsinfolistlauncher...)
 	return friendsinfo, nil
@@ -324,7 +303,6 @@ func (ud UserRepository) QueryGroupOfUser(useraccount int64) ([]entity.GroupInfo
 	}
 
 	return groupentitylist, nil
-
 }
 
 // CreateGroup 创建群聊
