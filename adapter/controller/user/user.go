@@ -20,7 +20,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +36,7 @@ func RegisterAccount(c *gin.Context) {
 		return
 	}
 	path := c.FullPath()
-	ifexitreq, err := Service.UserService.JudgeRequestFrequence(path+userinfo.UserEmail+"register", 5)
+	ifexitreq, err := Service.CommonService.JudgeRequestFrequence(path+userinfo.UserEmail+"register", 5)
 	if err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
@@ -47,14 +46,13 @@ func RegisterAccount(c *gin.Context) {
 		return
 	}
 	// 验证验证码与邮箱
-	ifhasemail, err := Service.UserService.VerifyCode(userinfo.VerificationCode, userinfo.UserEmail)
-
+	code, err := Service.CommonService.GetVerificationCode(userinfo.UserEmail)
 	if err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
 	}
 
-	if !ifhasemail {
+	if code != userinfo.VerificationCode {
 		c.JSON(400, CommonError.NewVerificationCodeError().MarshalMap())
 		return
 	}
@@ -73,8 +71,8 @@ func RegisterAccount(c *gin.Context) {
 	}
 
 	// 注册成功发送邮件通知
-	err = Service.UserService.SendUseraccount(useraccount, userinfo.UserEmail)
-	if err != nil {
+	useraccountmessage := strconv.FormatInt(useraccount, 10)
+	if err := Service.CommonService.SendEmail("您的账号为："+useraccountmessage, "webchatting用户账号", userinfo.UserEmail); err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
 	}
@@ -96,7 +94,7 @@ func SendVerificationCode(c *gin.Context) {
 		return
 	}
 	path := c.FullPath()
-	frequent, err := Service.UserService.JudgeRequestFrequence(path+emailinfo.UserEmail, 60)
+	frequent, err := Service.CommonService.JudgeRequestFrequence(path+emailinfo.UserEmail, 60)
 	if err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
@@ -106,8 +104,28 @@ func SendVerificationCode(c *gin.Context) {
 		return
 	}
 
-	if err := Service.UserService.SendVerificationCode(emailinfo.UserEmail); err != nil {
+	randomcode, err := Service.UserService.IfCouldSendVerifyCodeForRegister(emailinfo.UserEmail)
+	if err != nil {
 		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
+		return
+	}
+
+	// 设置验证码缓存
+	success, err := Service.CommonService.SetVerificationCode(emailinfo.UserEmail, randomcode)
+	if err != nil {
+		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
+		return
+	}
+
+	if !success {
+		c.JSON(500, CommonError.NewSendVerificationCodeError(errors.New("服务器内部错误！").Error()).MarshalMap())
+		return
+
+	}
+
+	// 验证码邮件
+	if err := Service.CommonService.SendEmail(randomcode, "webchatting用户注册验证码", emailinfo.UserEmail); err != nil {
+		c.JSON(500, CommonError.NewSendVerificationCodeError(errors.New("服务器内部错误！").Error()).MarshalMap())
 		return
 	}
 
@@ -183,13 +201,13 @@ func GetUserInfo(c *gin.Context) {
 
 // GetFriendInfo 获取用户好友信息
 func GetFriendInfo(c *gin.Context) {
-	var userinfoget = UserInfoGet{}
+	var useraccount = c.Param("useraccount")
 
-	if err := c.BindJSON(&userinfoget); err != nil {
+	useraccountint, err := strconv.ParseInt(useraccount, 10, 64)
+	if err != nil {
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
-	useraccountint := userinfoget.UserAccount
 
 	friendInfo, err := Service.UserService.GetUserFriendInfo(useraccountint)
 	if err != nil {
@@ -257,49 +275,6 @@ func UpdateUserAvatar(c *gin.Context) {
 
 }
 
-// TokenVerify token鉴权 其中加入了请求频率限制
-func TokenVerify(c *gin.Context) {
-
-	token := c.GetHeader("token")
-	useraccount := c.GetHeader("account")
-	path := c.FullPath()
-	method := c.Request.Method
-
-	frequent, err := Service.UserService.JudgeRequestFrequence(path+method+useraccount, 5)
-	if err != nil {
-		c.AbortWithStatusJSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
-		return
-	}
-	if frequent {
-		c.AbortWithStatusJSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
-		return
-	}
-
-	useraccountint, err := strconv.ParseInt(useraccount, 10, 64)
-	if err != nil {
-		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
-		return
-	}
-
-	if token == "" || useraccount == "" {
-		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
-		return
-	}
-
-	jwtclaim, err := Jwt.ParseToken(token)
-	if err != nil {
-		logServer.Error("token解析失败:(%s)", err.Error())
-		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
-		return
-	}
-
-	if jwtclaim.UserAccount != useraccountint || jwtclaim.ExpiresAt < time.Now().Unix() {
-		c.AbortWithStatusJSON(401, CommonError.NewAuthorizationError().MarshalMap())
-		return
-	}
-	c.Next()
-}
-
 // UpdateUserInfo 更新用户信息
 func UpdateUserInfo(c *gin.Context) {
 	var userupdateinfo = UserInfoUpdate{}
@@ -329,12 +304,14 @@ func UpdateUserInfo(c *gin.Context) {
 
 // GetUserGroupInfo 查询用户所在的群信息
 func GetUserGroupInfo(c *gin.Context) {
-	var userinfoget = UserInfoGet{}
-	if err := c.BindJSON(&userinfoget); err != nil {
+	var useraccount = c.Param("useraccount")
+
+	useraccountint, err := strconv.ParseInt(useraccount, 10, 64)
+	if err != nil {
 		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
 		return
 	}
-	groupsinfo, err := Service.UserService.UserRepository.QueryGroupOfUser(userinfoget.UserAccount)
+	groupsinfo, err := Service.UserService.UserRepository.QueryGroupOfUser(useraccountint)
 	if err != nil {
 		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
 		return
@@ -342,80 +319,5 @@ func GetUserGroupInfo(c *gin.Context) {
 	c.JSON(200, map[string]interface{}{
 		"message":   "查询用户群聊信息成功！",
 		"groupinfo": groupsinfo,
-	})
-}
-
-// CreateNewGroup 新建群聊
-func CreateNewGroup(c *gin.Context) {
-	var groupinfo = GroupInfoCreateAndUpdate{}
-	if err := c.BindJSON(&groupinfo); err != nil {
-		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
-		return
-	}
-	if err := Service.UserService.CreateNewGroup(groupinfo.GroupName, groupinfo.GroupIntro, groupinfo.VerificationCode, groupinfo.CreateAt, groupinfo.UserAccount); err != nil {
-		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
-		return
-	}
-
-	c.JSON(200, map[string]interface{}{
-		"message": "新建群聊成功！",
-		"success": true,
-	})
-}
-
-// QueryGroupInfo 查询群信息
-func QueryGroupInfo(c *gin.Context) {
-	var groupinfoget = GroupInfoGet{}
-
-	if err := c.BindJSON(&groupinfoget); err != nil {
-		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
-		return
-	}
-
-	groupinfo, err := Service.UserService.UserRepository.QueryGroupInfo(groupinfoget.Groupid)
-	if err != nil {
-		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
-		return
-	}
-
-	c.JSON(200, map[string]interface{}{
-		"message":   "查询群聊信息成功！",
-		"groupinfo": groupinfo,
-	})
-}
-
-//SendNewGroupVerificationCode 发送验证码
-func SendNewGroupVerificationCode(c *gin.Context) {
-	var userinfo = UserInfoGet{}
-
-	// 解析数据
-
-	if err := c.BindJSON(&userinfo); err != nil {
-		logServer.Error("数据绑定失败:(%s)", err.Error())
-		c.JSON(500, CommonError.NewFieldError(err.Error()).MarshalMap())
-		return
-	}
-
-	// 设置邮件发送频率
-	useraccount := strconv.FormatInt(userinfo.UserAccount, 10)
-	path := c.FullPath()
-	frequent, err := Service.UserService.JudgeRequestFrequence(path+useraccount+"email", 60)
-	if err != nil {
-		c.JSON(500, CommonError.NewServerInternalError(err.Error()).MarshalMap())
-		return
-	}
-	if frequent {
-		c.JSON(500, CommonError.NewRequestsTooFrequentError().MarshalMap())
-		return
-	}
-
-	if err := Service.UserService.SendCreateNewGroupVerifyCode(userinfo.UserAccount); err != nil {
-		c.JSON(500, CommonError.NewSendVerificationCodeError(err.Error()).MarshalMap())
-		return
-	}
-
-	c.JSON(200, map[string]interface{}{
-		"message": "验证码发送成功",
-		"status":  200,
 	})
 }

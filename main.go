@@ -31,7 +31,8 @@ func main() {
 
 	logServer.Info("%s", configServer.ResourceStorecfg.UserAvatar)
 	// 资源文件夹开放
-	engine.StaticFS("/useravatar", http.Dir(configServer.ResourceStorecfg.UserAvatar)) // 用户头像位置
+	engine.StaticFS("/useravatar", http.Dir(configServer.ResourceStorecfg.UserAvatar))  // 用户头像位置
+	engine.StaticFS("/groupavatar", http.Dir(configServer.ResourceStorecfg.UserAvatar)) // 用户头像位置
 
 	// 初始化
 	engine.Use(cors.Cors())        // 解决跨域问题

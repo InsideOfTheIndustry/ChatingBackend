@@ -23,23 +23,10 @@ type UserRepository interface {
 	UpdateAvatar(user *entity.UserInfo) error                       // 修改用户头像信息
 	DeleteUser(useraccount int64) error                             // 删除用户
 	QueryGroupOfUser(useraccount int64) ([]entity.GroupInfo, error) // 查询用户所在群
-	CreateGroup(groupinfo entity.GroupInfo) error                   // 插入新群聊
-	QueryGroupInfo(groupid int64) (entity.GroupInfo, error)         // 查询某一群聊
-	UpdateGroup(groupinfo entity.GroupInfo) error                   // 更新群聊信息
 }
 
 //UserCacheRepository 用户缓存存储库
 type UserCacheRepository interface {
-	SetVerificationCode(emailaddr, verificationcode string) error       // 设置邮箱验证码
-	GetVerificationCode(emailaddr string) (string, error)               // 获取邮箱验证码
-	SetToken(useraccount int64, token string) error                     // 设置token信息
-	GetToken(useraccount int64) (string, error)                         // 获取token信息
-	GetRequestInfo(path string) (bool, error)                           // 获取访问信息（防止连续多次操作）
-	SetRequestInfo(path string, verifycode string, fretime int64) error // 设置访问信息（防止连续多次操作）
-
-}
-
-// UserEmailServer 用户邮箱服务接口
-type UserEmailServer interface {
-	SendEmail(message, subject, receiver string) error // 发送邮件
+	SetToken(useraccount int64, token string) error // 设置token信息
+	GetToken(useraccount int64) (string, error)     // 获取token信息
 }
