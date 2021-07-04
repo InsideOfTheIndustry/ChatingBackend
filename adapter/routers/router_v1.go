@@ -11,7 +11,9 @@ package routers
 
 import (
 	chattingApi "chatting/adapter/controller/chattingwithtcp"
+	groupApi "chatting/adapter/controller/group"
 	userApi "chatting/adapter/controller/user"
+	Middleware "chatting/adapter/middleware/jwt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,16 +26,23 @@ func InitRouter(r *gin.Engine) {
 	v1.GET("/chatting", chattingApi.ConnectToTcpServer) // 用户聊天时的连接
 
 	user := v1.Group("/user")
-	user.POST("/register", userApi.RegisterAccount)                                                   // 用户注册
-	user.POST("/verificationcode", userApi.SendVerificationCode)                                      // 发送验证码
-	user.POST("/newgroupverificationcode", userApi.TokenVerify, userApi.SendNewGroupVerificationCode) // 发送创建群聊验证码
-	user.POST("/login", userApi.UserLogin)                                                            // 用户登录
-	user.POST("/userinfo", userApi.TokenVerify, userApi.GetUserInfo)                                  // 获取用户信息
-	user.POST("/userfriend", userApi.TokenVerify, userApi.GetFriendInfo)                              // 获取用户好友信息
-	user.PUT("/useravatar", userApi.TokenVerify, userApi.UpdateUserAvatar)                            // 修改用户的头像信息
-	user.PUT("/userinfo", userApi.TokenVerify, userApi.UpdateUserInfo)                                // 修改用户的信息
-	user.POST("/usergroup", userApi.TokenVerify, userApi.GetUserGroupInfo)                            // 获取用户群聊信息
-	user.POST("/group", userApi.TokenVerify, userApi.CreateNewGroup)                                  // 新增一个群
-	user.POST("/grouinfo", userApi.TokenVerify, userApi.QueryGroupInfo)                               // 查询一个群信息
+	user.POST("/register", userApi.RegisterAccount)              // 用户注册
+	user.POST("/verificationcode", userApi.SendVerificationCode) // 发送验证码
+
+	user.POST("/login", userApi.UserLogin)                                                                // 用户登录
+	user.POST("/userinfo", Middleware.TokenVerifyWithoutTImeLimit, userApi.GetUserInfo)                   // 获取用户信息
+	user.PUT("/useravatar", Middleware.TokenVerify, userApi.UpdateUserAvatar)                             // 修改用户的头像信息
+	user.PUT("/userinfo", Middleware.TokenVerify, userApi.UpdateUserInfo)                                 // 修改用户的信息
+	user.GET("/usergroup/:useraccount", Middleware.TokenVerifyWithoutTImeLimit, userApi.GetUserGroupInfo) // 获取用户群聊信息
+	user.GET("/userfriend/:useraccount", Middleware.TokenVerifyWithoutTImeLimit, userApi.GetFriendInfo)   // 获取用户好友信息
+
+	group := v1.Group("/group")
+	group.POST("/newgroupverificationcode", Middleware.TokenVerify, groupApi.SendNewGroupVerificationCode) // 发送创建群聊验证码
+	group.POST("/group", Middleware.TokenVerify, groupApi.CreateNewGroup)                                  // 新增一个群
+	group.GET("/groupinfo/:groupid", groupApi.QueryGroupInfo)                                              // 查询一个群信息
+	group.PUT("/groupinfo", Middleware.TokenVerify, groupApi.UpdateGroupInfo)                              // 更新群聊信息
+	group.PUT("/groupavatar", Middleware.TokenVerify, groupApi.UpdateGroupAvatar)                          // 更新群头像
+	group.GET("/groupmemberinfo/:groupid", groupApi.QueryGroupMember)                                      // 查询群成员信息
+	group.PUT("/usernameingroup", Middleware.TokenVerify, groupApi.UpdateUserNameInGroup)                  // 更新群内昵称
 
 }

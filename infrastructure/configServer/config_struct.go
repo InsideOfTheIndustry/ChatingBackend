@@ -62,5 +62,6 @@ type Redis struct {
 
 // ResourceStore 资源文件存储位置  resourcestore
 type ResourceStore struct {
-	UserAvatar string // 用户头像存储位置 useravatar
+	UserAvatar  string // 用户头像存储位置 useravatar
+	GroupAvatar string // 群聊头像存储位置
 }

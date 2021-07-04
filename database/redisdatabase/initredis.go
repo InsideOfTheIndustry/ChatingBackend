@@ -12,6 +12,7 @@ package redisdatabase
 import (
 	"chatting/infrastructure/configServer"
 	"chatting/infrastructure/logServer"
+	"context"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -22,6 +23,7 @@ type RedisEngine struct {
 }
 
 var RedisClient *RedisEngine
+var CtxRedis context.Context
 
 // InitRedis 初始化redis连接
 func InitRedis() {
@@ -34,6 +36,7 @@ func InitRedis() {
 
 	var newredisclient = &RedisEngine{}
 	newredisclient.Client = rdb
+	CtxRedis = context.Background()
 
 	RedisClient = newredisclient
 	logServer.Info("redis数据库连接成功。")

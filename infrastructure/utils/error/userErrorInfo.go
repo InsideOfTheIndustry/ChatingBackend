@@ -53,7 +53,7 @@ func NewAccountOrPasswordError() Error {
 
 // NewAuthorizationError 鉴权失败
 func NewAuthorizationError() Error {
-	return NewCommonError(AuthorizationError, "token验证失败!")
+	return NewCommonError(AuthorizationError, "您的权限存在问题!")
 }
 
 // NewRequestsTooFrequentError 请求过于频繁

@@ -13,22 +13,39 @@ import (
 	"chatting/database/redisdatabase"
 	redisuser "chatting/database/redisdatabase/user"
 	"chatting/database/xormdatabase"
+	xormgroup "chatting/database/xormdatabase/repository/group"
 	xormuser "chatting/database/xormdatabase/repository/user"
-	"chatting/domain/user/service"
+	commonservice "chatting/domain/common/service"
+	groupservice "chatting/domain/group/service"
+	userservice "chatting/domain/user/service"
 	"chatting/infrastructure/emailServer"
 )
 
-var UserService service.UserService
+var UserService userservice.UserService
+var CommonService commonservice.CommonService
+var GroupService groupservice.GroupService
 
 // InitDomainService 将领域服务全部初始化
 func InitDomainService() {
 
 	// 新建用户领域服务
-	var newuserservice = service.UserService{
-		UserRepository: xormuser.UserRepository{XormEngine: xormdatabase.DBEngine},
+	var newuserservice = userservice.UserService{
+		UserRepository:      xormuser.UserRepository{XormEngine: xormdatabase.DBEngine},
 		UserCacheRepository: redisuser.UserCacheRepository{RedisEngine: redisdatabase.RedisClient},
-		UserEmailServer: emailServer.EmailEngineModel,
+	}
+
+	// 新建通用服务
+	var newcommonservice = commonservice.CommonService{
+		CommonCacheRepository: redisuser.UserCacheRepository{RedisEngine: redisdatabase.RedisClient},
+		CommonEmailRepository: emailServer.EmailEngineModel,
+	}
+
+	// 新建群聊服务
+	var newgroupservice = groupservice.GroupService{
+		GroupRepository: xormgroup.GroupRepository{XormEngine: xormdatabase.DBEngine},
 	}
 
 	UserService = newuserservice
+	CommonService = newcommonservice
+	GroupService = newgroupservice
 }

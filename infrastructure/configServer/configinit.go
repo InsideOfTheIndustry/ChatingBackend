@@ -64,6 +64,7 @@ func InitEmailcfg(emailcfg *viper.Viper) *Email {
 // InitResourceStore 初始化资源文件存储位置配置信息
 func InitResourceStore(resourcestorecfg *viper.Viper) *ResourceStore {
 	return &ResourceStore{
-		UserAvatar: resourcestorecfg.GetString("useravatar"),
+		UserAvatar:  resourcestorecfg.GetString("useravatar"),
+		GroupAvatar: resourcestorecfg.GetString("groupavatar"),
 	}
 }
